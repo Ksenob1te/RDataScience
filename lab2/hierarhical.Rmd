@@ -1,0 +1,106 @@
+---
+title: "Hierarchical Clustering Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Load necessary libraries
+library(tibble)
+library(ggplot2)
+library(dendextend)
+library(gridExtra)
+```
+
+## Load Data
+
+```{r}
+load(file = "income_elec_state.Rdata")
+file_data <- rownames_to_column(income_elec_state, var = "state")
+
+head(file_data)
+```
+
+## Data Transformation
+
+```{r}
+data_log <- file_data
+data_log[, 2:3] <- log10(file_data[, 2:3])
+
+head(data_log)
+```
+
+## Hierarchical Clustering Function
+
+```{r}
+hierarchical_clustering <- function(data, method) {
+  dist_matrix <- dist(data[, 2:3]) # Euclidean distance
+  
+  hc <- hclust(dist_matrix, method = method)
+  
+  plot(hc, main = paste("Dendrogram using", method, "linkage"), xlab = "", sub = "")
+  
+  clusters <- cutree(hc, k = 4)
+  data$cluster <- as.factor(clusters)
+  return(data)
+}
+```
+
+## Linkage Methods for Clustering
+
+```{r}
+linkage_methods <- c("single", "complete", "average", "centroid")
+
+plot_list <- list()
+i <- 0
+
+par(mfrow = c(2, 2))
+for (method in linkage_methods) {
+  rdata <- hierarchical_clustering(data_log, method)
+  i <- i + 1
+  plot_list[[i]] = ggplot(rdata, aes(x = elec, y = income, color = cluster)) +
+    geom_point(size = 3) +
+    labs(title = paste("Hierarchical Clustering -", method, "Linkage"), x = "Electricity Usage", y = "Income") +
+    theme_minimal()
+}
+
+grid.arrange(plot_list[[1]], plot_list[[2]], plot_list[[3]], plot_list[[4]], ncol = 2)
+```
+
+## Data Cleaning by Removing Outliers
+
+```{r}
+iqr_income <- IQR(data_log$income) # Interquartile Range for income
+iqr_elec <- IQR(data_log$elec)     # Interquartile Range for electricity usage
+
+income_thresholds <- quantile(data_log$income, c(0.25, 0.75)) + c(-1.5, 1.5) * iqr_income
+elec_thresholds <- quantile(data_log$elec, c(0.25, 0.75)) + c(-1.5, 1.5) * iqr_elec
+
+outliers <- with(
+  data_log,
+  income < income_thresholds[1] | income > income_thresholds[2] |
+    elec < elec_thresholds[1] | elec > elec_thresholds[2]
+)
+
+cleaned_data <- data_log[!outliers, ]
+
+head(cleaned_data)
+```
+
+## Linkage Methods for Clustering on Cleaned Data
+
+```{r}
+plot_list_cleaned <- list()
+i <- 0
+
+par(mfrow = c(2, 2))
+for (method in linkage_methods) {
+  rdata_cleaned <- hierarchical_clustering(cleaned_data, method)
+  i <- i + 1
+  plot_list_cleaned[[i]] = ggplot(rdata_cleaned, aes(x = elec, y = income, color = cluster)) +
+    geom_point(size = 3) +
+    labs(title = paste("Hierarchical -", method, "Linkage (CLR)"), x = "Electricity Usage", y = "Income") +
+    theme_minimal()
+}
+
+grid.arrange(plot_list_cleaned[[1]], plot_list_cleaned[[2]], plot_list_cleaned[[3]], plot_list_cleaned[[4]], ncol = 2)
+```
