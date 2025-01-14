@@ -1,0 +1,141 @@
+---
+title: "Association Rules"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(arules)
+library(arulesViz)
+library(ggplot2)
+library(plotly)
+```
+
+## Loading Transaction Data
+
+```{r}
+# How to make IDs for the data?
+transactions <- read.transactions("AssociationRules.csv", format = "basket", sep = " ")
+summary(transactions)
+```
+
+## Visualizing Frequent Items
+
+```{r}
+# From arules:
+# topN - Amount of items
+# type - Absolute or relative frequency
+itemFrequencyPlot(transactions, topN = 10, type = "absolute", col = "steelblue", main = "Top 10 Frequent Items")
+
+freq_table <- itemFrequency(transactions, type = "absolute")
+freq_table <- sort(freq_table, decreasing = TRUE)
+most_frequent_item <- names(freq_table[1])
+print(most_frequent_item)
+
+max_items <- max(size(transactions))
+print(max_items)
+```
+
+## Generating Association Rules
+
+```{r}
+# supp - Minimum frequency of (itemset in transactions)
+# conf - Minimum confidence of rule (X -> Y)
+rules <- apriori(transactions, parameter = list(supp = 0.01, conf = 0))
+length(rules)
+
+# Do sets (1, 2) -> 3 and (2, 3) -> 1 have different confidence values?
+# Confidence formula examples:
+# conf = P(3 | (1, 2)) = P(1, 2, 3) / P(1, 2)
+# conf = P(1 | (2, 3)) = P(1, 2, 3) / P(2, 3)
+# Answer: Yes, they are two different rules.
+rules_high_conf <- subset(rules, confidence >= 0.5)
+length(rules_high_conf)
+```
+
+## Visualizing Rules
+
+### Support vs Confidence
+```{r}
+plot(rules,
+     engine = "ggplot2",
+     measure = c("support", "confidence"),
+     shading = "lift",
+     main = "Support and Confidence") +
+  scale_color_gradientn(
+    colors = colorRampPalette(c("white", "red"))(20),
+    limits = c(0, 10),
+    na.value = "blue"
+  )  +
+  labs(x = "Support", y = "Confidence", color = "Lift") +
+  theme_minimal()
+```
+
+### Support vs Lift
+```{r}
+plot(rules,
+     engine = "ggplot2",
+     measure = c("support", "lift"),
+     shading = "confidence",
+     main = "Support vs Lift") +
+  scale_color_gradientn(
+    colors = colorRampPalette(c("white", "red"))(20),
+    na.value = "blue"
+  )  +
+  labs(x = "Support", y = "Lift", color = "Confidence") +
+  theme_minimal()
+```
+
+### Rules with High Support
+```{r}
+rules_10sup <- subset(rules, support >= 0.1)
+inspect(rules_10sup)
+
+rules_df <- as(rules_10sup, "data.frame")
+fig <- plot_ly(
+  data = rules_df,
+  x = ~support,
+  y = ~lift,
+  text = ~paste("Confidence: ", round(confidence, 2)),
+  type = 'scatter',
+  mode = 'markers',
+  marker = list(size = 10, color = ~confidence, colorscale = "Viridis", showscale = TRUE)
+)
+fig
+```
+
+### Matrix Visualization
+```{r}
+rules_10conf <- subset(rules, confidence > 0.8)
+inspect(rules_10conf)
+
+plot(rules_10conf, measure = "lift", method = "matrix", control=list(reorder='none'))
+```
+
+### Graph Visualization
+```{r}
+rules_3conf <- sort(rules, by = "lift")[0:3]
+plot(rules_3conf, method = "graph", engine = "igraph")
+```
+
+## Splitting Data and Running Algorithm Again
+
+```{r}
+# Split sets and form rules again
+train_transactions <- transactions[1:8000]
+test_transactions <- transactions[8001:10000]
+
+# Form rules on training data
+rules_train <- apriori(train_transactions, parameter = list(supp = 0.01, conf = 0.8))
+rules_train_select <- subset(rules_train, lift > 3)
+inspect(rules_train_select)
+
+# Evaluate on test data
+rules_test <- interestMeasure(rules_train_select, transactions = test_transactions, measure = c("support", "confidence", "lift", "count"), reuse = FALSE)
+rules_train_data <- as(rules_train_select, "data.frame")
+
+# Compare training and testing results
+for (i in 1:length(rules_train_select)) {
+  print(paste("Rule:", rules_train_data$rules[i]))
+  print(paste("   Train:  Conf: ", round(rules_train_data$confidence[i], digits = 2), "  Lift: ", round(rules_train_data$lift[i], digits = 2)))
+  print(paste("   Test:   Conf: ", round(rules_test$confidence[i], digits = 2), "  Lift: ", round(rules_test$lift[i], digits = 2)))
+}
