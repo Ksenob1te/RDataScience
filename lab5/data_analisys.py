@@ -150,6 +150,7 @@ def draw_roc_curve(_data):
 
     plt.show()
 
+# TODO: Разобраться с AUC (расшифровка, физ смысл)
 analyze_predictions(coefficients_def, data_def)
 draw_roc_curve(data_def)
 analyze_predictions(coefficients_price, data_price)
