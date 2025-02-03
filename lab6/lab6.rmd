@@ -1,0 +1,122 @@
+---
+title: "Naïve Bayes Classification"
+author: "Skalin Ivan"
+date: ""
+output: html_document
+---
+
+## Assignment 4.5
+
+### a. Construct the Classifier and Display Probabilities
+
+```{r income-model, message=TRUE, warning=FALSE}
+library(e1071)
+
+data <- read.csv("./nbtrain.csv")
+train <- data[1:9010, ]
+test  <- data[9011:10010, ]
+
+model_income <- naiveBayes(income ~ age + sex + educ, data = train)
+model_income
+```
+
+### if actions are undependened
+### P(Action | Atributes) = mul(P(atr_i | Action)) * P(Action) / P(Atributes)
+### as we're predicting enum(Actions) for defined Atribures - P(Atributes) is a const so we can ignore it
+### we should also use log to not use a lot of multiplication op + _eps, also this will fix having zero in the mul chain
+### so: sum(log(P(atr_i | Action) + _eps)) + log(P(Action))
+
+### b. Score the Model and Compute Misclassification Rates
+
+```{r income-evaluation, message=TRUE, warning=FALSE}
+pred_income <- predict(model_income, newdata = test)
+
+confusion_matrix <- table(Predicted = pred_income, Actual = test$income)
+print("Confusion Matrix for Income Prediction:")
+print(confusion_matrix)
+
+overall_error <- mean(pred_income != test$income)
+print(paste("Overall Misclassification Rate:", overall_error))
+
+# Calculate misclassification rates for each income class
+income_levels <- unique(test$income)
+for (level in income_levels) {
+  total <- sum(confusion_matrix[, level])
+  correct <- confusion_matrix[level, level]
+  misclass_rate <- 1 - (correct / total)
+  print(paste("Misclassification Rate for", level, ":", misclass_rate))
+}
+```
+
+## Assignment 4.6: Sex Prediction
+
+### a. Build the Classifier and Calculate Misclassification Rates
+
+```{r sex-model, message=TRUE, warning=FALSE}
+model_sex <- naiveBayes(sex ~ age + educ + income, data = train)
+model_sex
+
+pred_sex <- predict(model_sex, test)
+
+confusion_matrix_sex <- table(Predicted = pred_sex, Actual = test$sex)
+print(confusion_matrix_sex)
+
+overall_error_sex <- mean(pred_sex != test$sex)
+print(paste("Overall Misclassification Rate:", overall_error_sex))
+
+sex_levels <- unique(test$sex)
+for (sex in sex_levels) {
+  total <- sum(confusion_matrix_sex[, sex])
+  correct <- confusion_matrix_sex[sex, sex]
+  misclass_rate <- 1 - (correct / total)
+  print(paste("Misclassification Rate for", sex, ":", misclass_rate))
+}
+```
+
+### b. Balance the Training Data and Reconstruct the Model
+
+```{r sex-balanced-model, message=TRUE, warning=FALSE}
+male_data <- subset(train, sex == "M")
+female_data <- subset(train, sex == "F")
+
+set.seed(123)
+male_sample <- male_data[sample(nrow(male_data), 3500), ]
+female_sample <- female_data[sample(nrow(female_data), 3500), ]
+
+train_balanced <- rbind(male_sample, female_sample)
+
+model_balanced <- naiveBayes(sex ~ age + educ + income, data = train_balanced)
+model_balanced
+```
+
+### c. Evaluate the Balanced Model on Testing Data
+
+```{r sex-balanced-evaluation, message=TRUE, warning=FALSE}
+pred_balanced <- predict(model_balanced, test)
+
+confusion_balanced <- table(Predicted = pred_balanced, Actual = test$sex)
+cat("Confusion Matrix for Balanced Model:\n")
+print(confusion_balanced)
+
+overall_error_balanced <- mean(pred_balanced != test$sex)
+print(paste("Overall Misclassification Rate for Balanced Model:", overall_error_balanced))
+```
+
+### d. Repeat the Random Sampling Process Multiple Times
+
+```{r sex-multiple-iterations, message=TRUE, warning=FALSE}
+for (i in 1:4) {
+  male_sample_i   <- male_data[sample(nrow(male_data), 3500), ]
+  female_sample_i <- female_data[sample(nrow(female_data), 3500), ]
+  train_balanced_i <- rbind(male_sample_i, female_sample_i)
+  
+  # Train the model on the current balanced sample
+  model_i <- naiveBayes(sex ~ age + educ + income, data = train_balanced_i)
+  
+  # Predict on the test set and compute the misclassification rate
+  pred_i <- predict(model_i, test)
+  error_i <- mean(pred_i != test$sex)
+  print(paste("Iteration", i, "Overall Misclassification Rate:", error_i))
+}
+
+```
