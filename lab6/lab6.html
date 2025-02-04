@@ -431,8 +431,7 @@ print(&quot;Confusion Matrix for Income Prediction:&quot;)</code></pre>
 <pre class="r"><code>overall_error &lt;- mean(pred_income != test$income)
 print(paste(&quot;Overall Misclassification Rate:&quot;, overall_error))</code></pre>
 <pre><code>## [1] &quot;Overall Misclassification Rate: 0.205&quot;</code></pre>
-<pre class="r"><code># Calculate misclassification rates for each income class
-income_levels &lt;- unique(test$income)
+<pre class="r"><code>income_levels &lt;- unique(test$income)
 for (level in income_levels) {
   total &lt;- sum(confusion_matrix[, level])
   correct &lt;- confusion_matrix[level, level]
@@ -560,10 +559,8 @@ print(paste(&quot;Overall Misclassification Rate for Balanced Model:&quot;, over
   female_sample_i &lt;- female_data[sample(nrow(female_data), 3500), ]
   train_balanced_i &lt;- rbind(male_sample_i, female_sample_i)
   
-  # Train the model on the current balanced sample
   model_i &lt;- naiveBayes(sex ~ age + educ + income, data = train_balanced_i)
   
-  # Predict on the test set and compute the misclassification rate
   pred_i &lt;- predict(model_i, test)
   error_i &lt;- mean(pred_i != test$sex)
   print(paste(&quot;Iteration&quot;, i, &quot;Overall Misclassification Rate:&quot;, error_i))

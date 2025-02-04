@@ -1,5 +1,5 @@
 library(ggplot2)
-zip_income_table <- read.table("zipIncome.txt", header = TRUE, sep = "|")
+zip_income_table <- read.table("lab1/zipIncome.txt", header = TRUE, sep = "|")
 colnames(zip_income_table) <- c("zipCode", "income")
 income_values <- zip_income_table$income
 zip_code <- as.factor(zip_income_table$zipCode)
@@ -44,10 +44,7 @@ ggplot(filtered_data, aes(x = as.factor(filtered_zip), y = filtered_income))  +
 
 ggplot(filtered_data, aes(x = as.factor(filtered_zip), y = filtered_income))  +
   geom_point(aes(color = as.factor(filtered_zip)), size = 3, alpha = 0.1, position = "jitter") + 
-  geom_boxplot(aes(group = as.factor(filtered_zip)), alpha = 0.1, outlier.size=-Inf, notchwidth = 2) +  
+  geom_boxplot(aes(group = as.factor(filtered_zip)), alpha = 0.1, outlier.size=-Inf) +
   scale_y_continuous(trans = "log2") +
   labs(x = "Zip Code", y = "Income", title = "Default ommited") +  
   theme_minimal()
-
-# разобраться с усами у боксов
-# построить улитку паскаля

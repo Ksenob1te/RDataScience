@@ -38,7 +38,6 @@ print(confusion_matrix)
 overall_error <- mean(pred_income != test$income)
 print(paste("Overall Misclassification Rate:", overall_error))
 
-# Calculate misclassification rates for each income class
 income_levels <- unique(test$income)
 for (level in income_levels) {
   total <- sum(confusion_matrix[, level])
@@ -110,10 +109,8 @@ for (i in 1:4) {
   female_sample_i <- female_data[sample(nrow(female_data), 3500), ]
   train_balanced_i <- rbind(male_sample_i, female_sample_i)
   
-  # Train the model on the current balanced sample
   model_i <- naiveBayes(sex ~ age + educ + income, data = train_balanced_i)
   
-  # Predict on the test set and compute the misclassification rate
   pred_i <- predict(model_i, test)
   error_i <- mean(pred_i != test$sex)
   print(paste("Iteration", i, "Overall Misclassification Rate:", error_i))

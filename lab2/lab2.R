@@ -27,7 +27,7 @@ find_best_k <- function(somedata) {
 }
 
 
-load(file = "income_elec_state.Rdata")
+load(file = "lab2/income_elec_state.Rdata")
 file_data <- rownames_to_column(income_elec_state, var="state")
 # set.seed(0)
 kmeans_result <- kmeans(file_data[, -1], centers = 10)
