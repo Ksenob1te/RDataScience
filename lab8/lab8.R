@@ -1,3 +1,10 @@
+# ARMA - Autoregressive Moving Average
+# ARIMA - Autoregressive Integrated Moving Average
+
+# p - number of autoregressive terms
+# d - number of nonseasonal differences
+# q - number of moving-average terms
+
 eps <- scan("./lab8/jj.dat")
 eps_ts <- ts(eps, start = c(1960, 1), frequency = 4)
 
