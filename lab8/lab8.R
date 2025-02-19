@@ -5,6 +5,8 @@
 # d - number of nonseasonal differences
 # q - number of moving-average terms
 
+# partial correlation can be computed as the square root of the reduction in variance that is achieved by adding X3 to the regression of Y on X1 and X2.
+
 eps <- scan("./lab8/jj.dat")
 eps_ts <- ts(eps, start = c(1960, 1), frequency = 4)
 
@@ -51,12 +53,16 @@ model0
 # Autoregressive Integrated Moving Average
 
 # p and q are amount of items, not lag difference
-model1 <- arima(eps_log, order = c(1, 0, 0))
-model2 <- arima(eps_log, order = c(0, 0, 1))
-model3 <- arima(eps_log, order = c(1, 0, 1))
+model1 <- arima(eps_log, order = c(4, 0, 0))
+model1
+model2 <- arima(eps_log, order = c(4, 0, 3))
+model2
+model3 <- arima(eps_log, order = c(0, 0, 16))
+model3
+model4 <- arima(eps_log, order = c(1, 0, 16))
 
-aic_values <- c(model1$aic, model2$aic, model3$aic)
-names(aic_values) <- c("ARIMA(1,0,0)", "ARIMA(0,0,1)", "ARIMA(1,0,1)")
+aic_values <- c(model1$aic, model2$aic, model3$aic, model4$aic)
+names(aic_values) <- c("ARIMA(4, 0, 0)", "ARIMA(4, 0, 1)", "ARIMA(0, 0, 16)", "ARIMA(1, 0, 16)")
 print(aic_values)
 
 set.seed(123)
